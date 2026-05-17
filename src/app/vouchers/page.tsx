@@ -11,6 +11,15 @@ function fmt(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
+function urgencyBadge(v: Voucher) {
+  if (!v.expiry_date) return null;
+  const d = daysUntil(v.expiry_date);
+  if (d <= 30) return { label: `Expires in ${d}d`, cls: "bg-red-50 text-red-700" };
+  if (d <= 60) return { label: `Expires in ${d}d`, cls: "bg-[#FFF8EC] text-[#92600A]" };
+  if (d <= 180) return { label: `${d}d left`, cls: "bg-brand-light text-brand" };
+  return { label: `${d}d left`, cls: "bg-emerald-50 text-emerald-700" };
+}
+
 export default async function VouchersPage() {
   const [{ data: vouchers }, { data: cards }] = await Promise.all([
     supabase.from("vouchers").select("*").order("expiry_date", { ascending: true }),
@@ -25,26 +34,17 @@ export default async function VouchersPage() {
   const active = (vouchers ?? []).filter((v: Voucher) => !v.redeemed);
   const redeemed = (vouchers ?? []).filter((v: Voucher) => v.redeemed);
 
-  function urgencyBadge(v: Voucher) {
-    if (!v.expiry_date) return null;
-    const d = daysUntil(v.expiry_date);
-    if (d <= 30) return { label: `Expires in ${d}d`, cls: "bg-red-100 text-red-700" };
-    if (d <= 60) return { label: `Expires in ${d}d`, cls: "bg-amber-100 text-amber-700" };
-    if (d <= 180) return { label: `${d}d left`, cls: "bg-yellow-100 text-yellow-700" };
-    return { label: `${d}d left`, cls: "bg-green-100 text-green-700" };
-  }
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Vouchers</h1>
-        <p className="text-sm text-gray-500 mt-1">Sorted by expiry — oldest first</p>
+        <h1 className="text-xl font-semibold text-ink">Vouchers</h1>
+        <p className="text-sm text-ink-3 mt-0.5">Sorted by expiry — oldest first</p>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-gray-700">Active ({active.length})</h2>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-ink-2">Active ({active.length})</p>
         {active.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
+          <div className="bg-white rounded-2xl border border-warm-border p-8 text-center text-ink-3 text-sm">
             No active vouchers. They appear here once linked to a milestone.
           </div>
         ) : (
@@ -52,29 +52,42 @@ export default async function VouchersPage() {
             const badge = urgencyBadge(v);
             const card = v.source_card_id ? cardMap[v.source_card_id] : null;
             return (
-              <div key={v.voucher_id} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between gap-4">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900">{v.voucher_type.replace(/_/g, " ")}</p>
+              <div
+                key={v.voucher_id}
+                className="bg-white rounded-2xl border border-warm-border p-5 flex items-center justify-between gap-4"
+              >
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-ink">{v.voucher_type.replace(/_/g, " ")}</p>
                     {badge && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${badge.cls}`}>
                         {badge.label}
                       </span>
                     )}
                   </div>
-                  {v.description && <p className="text-sm text-gray-600">{v.description}</p>}
-                  <div className="flex gap-3 text-xs text-gray-500">
+                  {v.description && <p className="text-sm text-ink-2">{v.description}</p>}
+                  <div className="flex flex-wrap gap-2 text-xs text-ink-3">
                     {card && <span>{card.display_name} ({card.holder_id})</span>}
-                    {v.issued_date && <><span>·</span><span>Issued {v.issued_date}</span></>}
-                    {v.expiry_date && <><span>·</span><span>Expires {v.expiry_date}</span></>}
+                    {v.issued_date && (
+                      <>
+                        <span>·</span>
+                        <span>Issued {v.issued_date}</span>
+                      </>
+                    )}
+                    {v.expiry_date && (
+                      <>
+                        <span>·</span>
+                        <span>Expires {v.expiry_date}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
                   {v.face_value_inr && (
-                    <p className="font-semibold text-gray-900">{fmt(v.face_value_inr)}</p>
+                    <p className="font-semibold text-ink">{fmt(v.face_value_inr)}</p>
                   )}
                   {v.effective_value_inr && v.effective_value_inr !== v.face_value_inr && (
-                    <p className="text-xs text-gray-500">~{fmt(v.effective_value_inr)} effective</p>
+                    <p className="text-xs text-ink-3">~{fmt(v.effective_value_inr)} effective</p>
                   )}
                 </div>
               </div>
@@ -84,21 +97,26 @@ export default async function VouchersPage() {
       </div>
 
       {redeemed.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-gray-500">Redeemed ({redeemed.length})</h2>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-ink-3">Redeemed ({redeemed.length})</p>
           {redeemed.map((v: Voucher) => {
             const card = v.source_card_id ? cardMap[v.source_card_id] : null;
             return (
-              <div key={v.voucher_id} className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex items-center justify-between opacity-60">
+              <div
+                key={v.voucher_id}
+                className="bg-cream rounded-2xl border border-warm-border p-4 flex items-center justify-between opacity-60"
+              >
                 <div>
-                  <p className="text-sm font-medium text-gray-700 line-through">{v.voucher_type.replace(/_/g, " ")}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm font-medium text-ink-2 line-through">
+                    {v.voucher_type.replace(/_/g, " ")}
+                  </p>
+                  <p className="text-xs text-ink-3">
                     {card?.display_name} · Redeemed {v.redeemed_date}
                     {v.redeemed_against && ` · ${v.redeemed_against}`}
                   </p>
                 </div>
                 {v.face_value_inr && (
-                  <p className="text-sm text-gray-500">{fmt(v.face_value_inr)}</p>
+                  <p className="text-sm text-ink-2">{fmt(v.face_value_inr)}</p>
                 )}
               </div>
             );

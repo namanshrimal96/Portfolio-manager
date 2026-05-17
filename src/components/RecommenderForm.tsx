@@ -38,12 +38,18 @@ export default function RecommenderForm() {
   const excluded = results?.filter((r) => r.is_excluded) ?? [];
   const medals = ["🥇", "🥈", "🥉"];
 
+  const inputClass =
+    "w-full border border-warm-border rounded-xl px-3 py-2.5 text-sm text-ink bg-white placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-[#FF5500] focus:border-brand transition-colors";
+
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <div className="space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl border border-warm-border p-6 space-y-4"
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Amount (₹)</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1.5">Amount (₹)</label>
             <input
               type="number"
               required
@@ -51,85 +57,114 @@ export default function RecommenderForm() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="10000"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1.5">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputClass}
             >
               {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
+                <option key={c} value={c}>
+                  {c.replace(/_/g, " ")}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Merchant (optional)</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1.5">
+              Merchant{" "}
+              <span className="text-ink-3 font-normal">(optional)</span>
+            </label>
             <input
               type="text"
               value={merchant}
               onChange={(e) => setMerchant(e.target.value)}
               placeholder="e.g. Swiggy"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputClass}
             />
           </div>
         </div>
         <button
           type="submit"
           disabled={loading || !amount}
-          className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="bg-brand text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#E04D00] disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
           {loading ? "Computing…" : "Get Recommendation"}
         </button>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-red-600 text-sm">{error}</p>}
       </form>
 
       {results && (
         <div className="space-y-3">
           {eligible.map((r, i) => (
-            <div key={r.card_id} className={`bg-white rounded-xl border p-5 ${i === 0 ? "border-indigo-300 shadow-sm" : "border-gray-200"}`}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <span className="text-lg mr-2">{medals[i] ?? "•"}</span>
-                  <span className="font-semibold text-gray-900">{r.card_name}</span>
-                  <span className="ml-2 text-xs text-gray-500">{r.holder_id}</span>
-                  {r.stale_rate_warning && (
-                    <span className="ml-2 bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">⚠ Rates unverified &gt;90d</span>
-                  )}
+            <div
+              key={r.card_id}
+              className={`bg-white rounded-2xl border p-5 ${
+                i === 0 ? "border-brand" : "border-warm-border"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-3 gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base">{medals[i] ?? "•"}</span>
+                    <span className="font-semibold text-ink">{r.card_name}</span>
+                    <span className="text-xs text-ink-3 capitalize">{r.holder_id}</span>
+                    {r.stale_rate_warning && (
+                      <span className="bg-[#FFF8EC] text-[#92600A] text-xs px-2 py-0.5 rounded-lg">
+                        ⚠ Rates unverified &gt;90d
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-semibold text-gray-900">{fmt(r.expected_value_inr)}</p>
-                  <p className="text-xs text-gray-500">{r.return_rate.toFixed(1)}% return</p>
+                <div className="text-right shrink-0">
+                  <p className="text-lg font-bold text-ink">{fmt(r.expected_value_inr)}</p>
+                  <p className="text-xs text-ink-3">{r.return_rate.toFixed(1)}% return</p>
                 </div>
               </div>
-              <ul className="space-y-1">
+              <ul className="space-y-1 mb-3">
                 {r.reasoning.map((line, j) => (
-                  <li key={j} className="text-sm text-gray-600 flex gap-2">
-                    <span className="text-gray-300 mt-0.5">•</span>
+                  <li key={j} className="text-sm text-ink-2 flex gap-2">
+                    <span className="text-ink-3 mt-0.5 shrink-0">·</span>
                     <span>{line}</span>
                   </li>
                 ))}
               </ul>
               {(r.milestone_bonus > 0 || r.fee_waiver_bonus > 0) && (
-                <div className="mt-3 flex gap-3 text-xs">
-                  {r.base_value > 0 && <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded">Base {fmt(r.base_value)}</span>}
-                  {r.milestone_bonus > 0 && <span className="bg-green-50 text-green-700 px-2 py-1 rounded">Milestone +{fmt(r.milestone_bonus)}</span>}
-                  {r.fee_waiver_bonus > 0 && <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">Fee waiver +{fmt(r.fee_waiver_bonus)}</span>}
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {r.base_value > 0 && (
+                    <span className="bg-cream text-ink-2 border border-warm-border px-2 py-1 rounded-lg">
+                      Base {fmt(r.base_value)}
+                    </span>
+                  )}
+                  {r.milestone_bonus > 0 && (
+                    <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg">
+                      Milestone +{fmt(r.milestone_bonus)}
+                    </span>
+                  )}
+                  {r.fee_waiver_bonus > 0 && (
+                    <span className="bg-brand-light text-brand px-2 py-1 rounded-lg">
+                      Fee waiver +{fmt(r.fee_waiver_bonus)}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
           ))}
 
           {excluded.length > 0 && (
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Excluded cards</p>
+            <div className="bg-cream rounded-2xl border border-warm-border p-4">
+              <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2">
+                Excluded cards
+              </p>
               <ul className="space-y-1">
                 {excluded.map((r) => (
-                  <li key={r.card_id} className="text-sm text-gray-500">
-                    <span className="font-medium text-gray-700">{r.card_name}</span> — {r.exclusion_reason}
+                  <li key={r.card_id} className="text-sm text-ink-2">
+                    <span className="font-medium text-ink">{r.card_name}</span> —{" "}
+                    {r.exclusion_reason}
                   </li>
                 ))}
               </ul>

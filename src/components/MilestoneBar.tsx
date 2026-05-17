@@ -14,21 +14,21 @@ function fmt(n: number) {
 export default function MilestoneBar({ label, current, target, achieved }: MilestoneBarProps) {
   const pct = Math.min(100, (current / target) * 100);
   const barColor = achieved
-    ? "bg-green-500"
+    ? "bg-emerald-500"
     : pct >= 80
     ? "bg-amber-500"
-    : "bg-indigo-500";
+    : "bg-brand";
 
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-xs text-gray-600">
+      <div className="flex justify-between text-xs text-ink-2">
         <span>{label}</span>
         <span>
           {fmt(current)} / {fmt(target)}
-          {achieved && " ✓"}
+          {achieved && <span className="ml-1 text-emerald-600">✓</span>}
         </span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-warm-border rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${barColor}`}
           style={{ width: `${pct}%` }}

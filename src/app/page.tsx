@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { CurrencyBalance, Currency, Voucher } from "@/lib/types";
-import StatCard from "@/components/StatCard";
 import ExpiryTimeline from "@/components/ExpiryTimeline";
+import BalanceUpdateForm from "@/components/BalanceUpdateForm";
 
 function fmt(n: number) {
   if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
@@ -38,42 +38,56 @@ export default async function DashboardPage() {
     (v: Voucher) => v.expiry_date && daysUntil(v.expiry_date) <= 60
   );
 
+  const activeCurrencies = (balances ?? []).filter((b: CurrencyBalance) => b.balance > 0).length;
+
   const sortedBalances = [...(balances ?? [])].sort((a: CurrencyBalance, b: CurrencyBalance) => {
     const aVal = a.balance * (currencyMap[a.currency_code]?.floor_value_per_point ?? 0);
     const bVal = b.balance * (currencyMap[b.currency_code]?.floor_value_per_point ?? 0);
     return bVal - aVal;
   });
 
+  const dateStr = new Date().toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Portfolio Overview</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Conservative floor values · {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Portfolio Overview</h1>
+          <p className="text-sm text-ink-3 mt-0.5">
+            Floor valuation · {dateStr}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-ink">{fmt(totalValue)}</p>
+          <p className="text-xs text-ink-3 mt-0.5">
+            {activeCurrencies} active currencies · {(cards ?? []).length} cards
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Portfolio Value" value={fmt(totalValue)} sub="floor valuation" />
-        <StatCard label="Active Currencies" value={String((balances ?? []).filter((b: CurrencyBalance) => b.balance > 0).length)} />
-        <StatCard label="Active Cards" value={String((cards ?? []).length)} />
-        <StatCard
-          label="Vouchers Expiring <60d"
-          value={String(expiringVouchers.length)}
-          accent={expiringVouchers.length > 0 ? "danger" : "default"}
-          sub={expiringVouchers.length > 0 ? "action required" : "all clear"}
-        />
-      </div>
+      {expiringVouchers.length > 0 && (
+        <div className="bg-[#FFF8EC] border border-[#F0D9A0] rounded-xl px-4 py-3 text-sm text-[#92600A] flex items-center gap-2">
+          <span>⚠</span>
+          <span>
+            {expiringVouchers.length} voucher{expiringVouchers.length > 1 ? "s" : ""} expiring
+            within 60 days — check the Vouchers tab.
+          </span>
+        </div>
+      )}
 
-      <ExpiryTimeline balances={balances ?? []} />
+      <ExpiryTimeline balances={(balances ?? []) as CurrencyBalance[]} />
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">Currency Balances</h2>
+      <div className="bg-white rounded-2xl border border-warm-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-warm-border">
+          <h2 className="text-sm font-semibold text-ink">Currency Balances</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs text-gray-500 uppercase tracking-wide border-b border-gray-100">
+            <tr className="text-[11px] font-medium text-ink-3 uppercase tracking-wide border-b border-warm-border">
               <th className="text-left px-5 py-3">Currency</th>
               <th className="text-left px-5 py-3">Holder</th>
               <th className="text-right px-5 py-3">Balance</th>
@@ -84,8 +98,8 @@ export default async function DashboardPage() {
           <tbody>
             {sortedBalances.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
-                  No balances recorded yet. Add your first snapshot below.
+                <td colSpan={5} className="px-5 py-10 text-center text-ink-3 text-sm">
+                  No balances recorded yet. Add your first snapshot in Supabase.
                 </td>
               </tr>
             ) : (
@@ -94,27 +108,34 @@ export default async function DashboardPage() {
                 const expiry = b.oldest_tranche_expiry;
                 const expDays = expiry ? daysUntil(expiry) : null;
                 return (
-                  <tr key={b.balance_id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{b.currency_code}</p>
-                      <p className="text-xs text-gray-400">{currencyMap[b.currency_code]?.program}</p>
+                  <tr
+                    key={b.balance_id}
+                    className="border-b border-warm-border last:border-0 hover:bg-cream transition-colors"
+                  >
+                    <td className="px-5 py-3.5">
+                      <p className="font-medium text-ink">{b.currency_code}</p>
+                      <p className="text-[11px] text-ink-3">{currencyMap[b.currency_code]?.program}</p>
                     </td>
-                    <td className="px-5 py-3 capitalize text-gray-600">{b.holder_id}</td>
-                    <td className="px-5 py-3 text-right font-mono text-gray-900">
+                    <td className="px-5 py-3.5 capitalize text-ink-2">{b.holder_id}</td>
+                    <td className="px-5 py-3.5 text-right font-mono text-ink">
                       {b.balance.toLocaleString("en-IN")}
                     </td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900">{fmt(floorVal)}</td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3.5 text-right font-medium text-ink">{fmt(floorVal)}</td>
+                    <td className="px-5 py-3.5 text-right">
                       {expiry ? (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          expDays! <= 90 ? "bg-red-100 text-red-700" :
-                          expDays! <= 180 ? "bg-amber-100 text-amber-700" :
-                          "bg-gray-100 text-gray-600"
-                        }`}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            expDays! <= 90
+                              ? "bg-red-50 text-red-700"
+                              : expDays! <= 180
+                              ? "bg-[#FFF8EC] text-[#92600A]"
+                              : "bg-cream text-ink-2"
+                          }`}
+                        >
                           {expiry}
                         </span>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-ink-3">—</span>
                       )}
                     </td>
                   </tr>
@@ -124,6 +145,14 @@ export default async function DashboardPage() {
           </tbody>
         </table>
       </div>
+
+      <BalanceUpdateForm
+        currencies={sortedBalances.map((b: CurrencyBalance) => ({
+          currency_code: b.currency_code,
+          display_name: currencyMap[b.currency_code]?.display_name ?? b.currency_code,
+          holder_id: b.holder_id,
+        }))}
+      />
     </div>
   );
 }
