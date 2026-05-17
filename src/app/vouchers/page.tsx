@@ -17,9 +17,10 @@ export default async function VouchersPage() {
     supabase.from("cards").select("card_id, display_name, holder_id"),
   ]);
 
-  const cardMap: Record<string, Card> = Object.fromEntries(
-    (cards ?? []).map((c: Card) => [c.card_id, c] as [string, Card])
-  );
+  const cardMap: Record<string, Card> = {};
+  for (const c of (cards ?? []) as Card[]) {
+    cardMap[c.card_id] = c;
+  }
 
   const active = (vouchers ?? []).filter((v: Voucher) => !v.redeemed);
   const redeemed = (vouchers ?? []).filter((v: Voucher) => v.redeemed);

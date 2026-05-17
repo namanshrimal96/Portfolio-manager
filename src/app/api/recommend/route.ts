@@ -28,9 +28,10 @@ export async function POST(req: NextRequest) {
     (milestonesMap[m.card_id] ??= []).push(m);
   }
 
-  const cardMap: Record<string, Card> = Object.fromEntries(
-    (cards ?? []).map((c: Card) => [c.card_id, c] as [string, Card])
-  );
+  const cardMap: Record<string, Card> = {};
+  for (const c of (cards ?? []) as Card[]) {
+    cardMap[c.card_id] = c;
+  }
 
   const cardYearSpendMap: Record<string, number> = {};
   for (const s of spendLogs ?? []) {

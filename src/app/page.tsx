@@ -24,9 +24,10 @@ export default async function DashboardPage() {
       supabase.from("cards").select("*").eq("active", true),
     ]);
 
-  const currencyMap = Object.fromEntries(
-    (currencies ?? []).map((c: Currency) => [c.currency_code, c] as [string, Currency])
-  );
+  const currencyMap: Record<string, Currency> = {};
+  for (const c of (currencies ?? []) as Currency[]) {
+    currencyMap[c.currency_code] = c;
+  }
 
   const totalValue = (balances ?? []).reduce((sum: number, b: CurrencyBalance) => {
     const c = currencyMap[b.currency_code];
