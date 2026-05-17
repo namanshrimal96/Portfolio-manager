@@ -15,6 +15,24 @@ function daysUntilJan1() {
   return Math.ceil((nextJan1.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function Bar({ used, cap, label, color }: { used: number; cap: number; label: string; color: string }) {
+  const pct = Math.min(100, cap > 0 ? (used / cap) * 100 : 0);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-gray-600">
+        <span>{label}</span>
+        <span>{fmt(used)} / {fmt(cap)} ({pct.toFixed(0)}%)</span>
+      </div>
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full ${color} ${pct >= 90 ? "animate-pulse" : ""}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default async function TransfersPage() {
   const currentYear = new Date().getFullYear();
   const [{ data: partners }, { data: usageRows }] = await Promise.all([
@@ -22,14 +40,12 @@ export default async function TransfersPage() {
     supabase.from("ytd_transfer_usage").select("*").eq("year", currentYear),
   ]);
 
-  // Index usage by source_currency + group_tag
   const usageMap: Record<string, number> = {};
   for (const row of usageRows ?? []) {
     const key = `${row.source_currency}__${row.group_tag ?? "null"}`;
     usageMap[key] = (usageMap[key] ?? 0) + Number(row.total_transferred);
   }
 
-  // Group partners by source_currency
   const byCurrency: Record<string, TransferPartner[]> = {};
   for (const p of (partners ?? []) as TransferPartner[]) {
     (byCurrency[p.source_currency] ??= []).push(p);
@@ -49,24 +65,13 @@ export default async function TransfersPage() {
         const groupB = usageMap[`${currency}__B`] ?? 0;
         const totalUsed = groupA + groupB;
         const partner = ps[0];
-        const totalCap = partner.annual_cap_total;
-        const capA = partner.annual_cap_group_a;
-        const capB = partner.annual_cap_group_b;
-
-        function Bar({ used, cap, label, color }: { used: number; cap: number; label: string; color: string }) {
-          const pct = Math.min(100, cap > 0 ? (used / cap) * 100 : 0);
-          return (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>{label}</span>
-                <span>{fmt(used)} / {fmt(cap)} ({pct.toFixed(0)}%)</span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${color} ${pct >= 90 ? "animate-pulse" : ""}`} style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          );
-        }
+        const totalCap = partner.annual_cap_total ?? 0;
+        const capA = partner.annual_cap_group_a ?? 0;
+        const capB = partner.annual_cap_group_b ?? 0;
+        const isStale = ps.some((p) => {
+          const days = Math.floor((Date.now() - new Date(p.last_verified).getTime()) / (1000 * 60 * 60 * 24));
+          return days > 90;
+        });
 
         return (
           <div key={currency} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
@@ -78,9 +83,9 @@ export default async function TransfersPage() {
             </div>
 
             <div className="space-y-3">
-              {totalCap && <Bar used={totalUsed} cap={totalCap} label="Total Cap" color="bg-indigo-500" />}
-              {capA && <Bar used={groupA} cap={capA} label="Group A" color="bg-blue-400" />}
-              {capB && <Bar used={groupB} cap={capB} label="Group B" color="bg-violet-400" />}
+              {totalCap > 0 && <Bar used={totalUsed} cap={totalCap} label="Total Cap" color="bg-indigo-500" />}
+              {capA > 0 && <Bar used={groupA} cap={capA} label="Group A" color="bg-blue-400" />}
+              {capB > 0 && <Bar used={groupB} cap={capB} label="Group B" color="bg-violet-400" />}
             </div>
 
             <div className="pt-3 border-t border-gray-100">
@@ -99,10 +104,7 @@ export default async function TransfersPage() {
               </div>
             </div>
 
-            {ps.some((p) => {
-              const days = Math.floor((Date.now() - new Date(p.last_verified).getTime()) / (1000 * 60 * 60 * 24));
-              return days > 90;
-            }) && (
+            {isStale && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-xs text-amber-700">
                 ⚠ Partner details unverified &gt;90 days. Confirm ratios and caps before transferring.
               </div>
