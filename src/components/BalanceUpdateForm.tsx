@@ -13,7 +13,7 @@ interface Props {
 
 export default function BalanceUpdateForm({ currencies }: Props) {
   const [selected, setSelected] = useState(
-    currencies[0]?.currency_code + "__" + currencies[0]?.holder_id ?? ""
+    currencies.length > 0 ? `${currencies[0].currency_code}__${currencies[0].holder_id}` : ""
   );
   const [balance, setBalance] = useState("");
   const [expiry, setExpiry] = useState("");
