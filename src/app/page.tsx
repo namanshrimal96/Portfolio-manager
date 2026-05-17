@@ -25,7 +25,7 @@ export default async function DashboardPage() {
     ]);
 
   const currencyMap = Object.fromEntries(
-    (currencies ?? []).map((c: Currency) => [c.currency_code, c])
+    (currencies ?? []).map((c: Currency) => [c.currency_code, c] as [string, Currency])
   );
 
   const totalValue = (balances ?? []).reduce((sum: number, b: CurrencyBalance) => {

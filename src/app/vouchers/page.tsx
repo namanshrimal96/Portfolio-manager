@@ -18,7 +18,7 @@ export default async function VouchersPage() {
   ]);
 
   const cardMap: Record<string, Card> = Object.fromEntries(
-    (cards ?? []).map((c: Card) => [c.card_id, c])
+    (cards ?? []).map((c: Card) => [c.card_id, c] as [string, Card])
   );
 
   const active = (vouchers ?? []).filter((v: Voucher) => !v.redeemed);

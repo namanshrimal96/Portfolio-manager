@@ -30,7 +30,7 @@ export default async function CardsPage() {
   // Card-year spend: sum from anniversary_date to now (approximate with calendar year if no date)
   const spendByCard: Record<string, number> = {};
   const cardMap: Record<string, Card> = Object.fromEntries(
-    (cards ?? []).map((c: Card) => [c.card_id, c])
+    (cards ?? []).map((c: Card) => [c.card_id, c] as [string, Card])
   );
   for (const s of spendLogs ?? []) {
     const card = cardMap[s.card_id];
